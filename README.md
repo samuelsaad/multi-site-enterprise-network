@@ -6,7 +6,6 @@
 
 **Status:** ✅ **Complete** — network built and verified end-to-end across both sites; automation (config generation + compliance auditing) in place and running in CI.
 
-> Replace `YOUR-USERNAME` in the badge URL above with your GitHub username so the build badge renders.
 
 ---
 
