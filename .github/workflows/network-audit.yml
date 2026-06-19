@@ -1,0 +1,24 @@
+name: Network Config Audit
+
+# Runs the config compliance auditor on every push and pull request.
+# The auditor exits non-zero if any device fails the security baseline,
+# which fails this check -- so an insecure config can't slip in unnoticed.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run config compliance audit
+        run: python automation/config_audit.py configs/
