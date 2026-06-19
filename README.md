@@ -2,7 +2,7 @@
 
 > A documented two-site enterprise network built in Cisco Packet Tracer — VLANs, inter-VLAN routing, 802.1Q trunking, Spanning Tree, and DHCP, extending to OSPF, NAT, and ACLs over a WAN, with Python tooling for config backup and auditing.
 
-**Status:** Actively building — **Phases A–E complete** (switched + routed LAN fully operational across both sites). WAN routing (OSPF), NAT, ACLs, and Python automation in progress.
+**Status:** ✅ **Complete** — all phases (A–H) built and verified end-to-end across both sites. Python automation is the next milestone.
 
 ---
 
@@ -17,8 +17,8 @@ It's built from the ground up in Cisco Packet Tracer using a **design-first, lay
 - **Layer 2** — VLAN segmentation, 802.1Q trunking, VLAN pruning, Rapid PVST+ Spanning Tree with deliberate root-bridge selection, loop prevention across redundant links
 - **Layer 3** — inter-VLAN routing with SVIs on multilayer switches, hierarchical IP subnetting (/24 user networks + /30 point-to-point links)
 - **Services** — DHCP server pools with address exclusions and per-VLAN gateways
-- **Routing** *(in progress)* — OSPFv2 single-area, default-route origination from the internet edge
-- **Edge & security** *(in progress)* — NAT/PAT for internet access, standard and extended ACLs
+- **Routing** — OSPFv2 single-area, default-route origination from the internet edge, passive-interface hardening on host-facing links
+- **Edge & security** — NAT/PAT (overload) for shared internet access, a standard ACL restricting management (vty) access to the management subnets, an extended ACL enforcing inter-VLAN policy
 - **Automation** *(planned)* — Python (Netmiko / Nornir) for config backup, compliance auditing, and Jinja2-based config templating
 - **Operations** — structured `show`-command verification and layered, isolate-the-failing-layer troubleshooting
 
@@ -94,9 +94,9 @@ A hierarchical scheme — `10.<site>.<vlan>.0/24` for user networks, `10.255.0.x
 | C     | 802.1Q trunking and Rapid PVST+ Spanning Tree    | ✅ Complete    |
 | D     | Inter-VLAN routing (`ip routing` + SVIs)         | ✅ Complete    |
 | E     | DHCP server pools                                | ✅ Complete    |
-| F     | WAN links + OSPF (inter-site routing)            | ⏳ In progress |
-| G     | NAT/PAT for internet access                      | ⏳ Planned     |
-| H     | Standard & extended ACLs                         | ⏳ Planned     |
+| F     | WAN links + OSPF (inter-site routing)            | ✅ Complete    |
+| G     | NAT/PAT for internet access                      | ✅ Complete    |
+| H     | Standard & extended ACLs                         | ✅ Complete    |
 | —     | Python automation (backup / audit / templating)  | ⏳ Planned     |
 
 ## Repository structure
@@ -113,8 +113,7 @@ multi-site-enterprise-network/
 │   ├── SW-BR-A1.txt
 │   └── ...
 └── docs/
-    ├── topology.png                     # network diagram
-    └── build-guide.md                   # the why-first, phase-by-phase build walkthrough
+    └── topology.png                     # network diagram
 ```
 
 ## Opening the lab
@@ -127,16 +126,25 @@ multi-site-enterprise-network/
    show interfaces trunk          # trunks carrying the right VLANs
    show spanning-tree vlan 10     # deterministic root, redundant links blocked
    show ip dhcp binding           # leased client addresses
+   show ip ospf neighbor          # OSPF adjacencies in FULL state
+   show ip route ospf             # remote-site networks + default route learned
    ```
-4. End-to-end proof: a PC in VLAN 10 can `ping` a PC in VLAN 20 — traffic routed by the L3 core, confirming inter-VLAN routing, trunking, and DHCP all working together.
+   On R-HQ, `show ip nat translations` shows live PAT entries during a test.
+4. End-to-end proofs:
+   - A PC in VLAN 10 pings a PC in VLAN 20 — inter-VLAN routing at the L3 core.
+   - A PC at HQ pings a PC at the Branch — OSPF across the WAN.
+   - Any client reaches the internet host `198.51.100.10` — NAT/PAT at the edge.
+   - A Sales (VLAN 20) PC is denied to the management network but still reaches everything else — the ACL policy.
 
 ## Roadmap
 
-- **Phase F — WAN + OSPF:** cable and configure the three routers, bring up the WAN link, and run single-area OSPF so HQ and Branch learn each other's networks and the internet default route.
-- **Phase G — NAT/PAT:** translate the private LANs to a single public address at R-HQ for shared internet access.
-- **Phase H — ACLs:** standard ACLs restricting management access, extended ACLs enforcing inter-VLAN/inter-site policy.
-- **Automation:** rebuild the topology in GNS3/CML (real SSH), then add Python scripts to back up every device config, audit a security baseline, and generate access-switch configs from Jinja2 templates.
+The switched and routed network is complete. The next milestone is automation:
+
+- **Lab uplift** — rebuild the topology in GNS3 or Cisco CML, where devices accept real SSH (Packet Tracer's automation support is limited).
+- **Config backup** — a Python (Netmiko) script that pulls and timestamps every device's running-config.
+- **Compliance audit** — script a security-baseline check (SSH-only management, no default passwords, expected ACLs present).
+- **Templating** — generate access-switch configs from Jinja2 templates so a new site or VLAN can be added consistently.
 
 ## Notes
 
-This was built and debugged hands-on, including real troubleshooting — cabling mismatches, a stubborn EtherChannel (ultimately simplified to STP-managed redundant trunks after hitting Packet Tracer's LACP quirks), shut ports, and missing VLANs — diagnosed with `show cdp neighbors`, `show etherchannel summary`, `show interfaces status`, and layered `ping` testing. The build guide in `docs/` walks through the *why* behind every configuration decision, not just the commands.
+This was built and debugged hands-on, including real troubleshooting — cabling mismatches, a stubborn EtherChannel (ultimately simplified to STP-managed redundant trunks after hitting Packet Tracer's LACP quirks), shut ports, and missing VLANs — diagnosed with `show cdp neighbors`, `show etherchannel summary`, `show interfaces status`, and layered `ping` testing.
