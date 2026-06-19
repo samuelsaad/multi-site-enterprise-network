@@ -1,0 +1,50 @@
+! ==========================================================
+! {{ device.hostname }} ({{ device.site }} access switch)
+! Generated from devices.yml — do not edit by hand.
+! Note: SSH also needs 'crypto key generate rsa' run once on the
+! device (choose 1024). That step is interactive and can't live
+! in a flat config file.
+! ==========================================================
+hostname {{ device.hostname }}
+!
+ip domain-name {{ common.domain_name }}
+service password-encryption
+enable secret {{ common.enable_secret }}
+username {{ common.username }} secret {{ common.user_secret }}
+!
+spanning-tree mode {{ common.stp_mode }}
+!
+{% for vlan in device.vlans %}
+vlan {{ vlan.id }}
+ name {{ vlan.name }}
+!
+{% endfor %}
+{% for ap in device.access_ports %}
+interface {{ ap.port }}
+ description {{ ap.desc }}
+ switchport mode access
+ switchport access vlan {{ ap.vlan }}
+ spanning-tree portfast
+ no shutdown
+!
+{% endfor %}
+{% for ul in device.uplinks %}
+interface {{ ul.port }}
+ description {{ ul.desc }}
+ switchport mode trunk
+ switchport trunk allowed vlan {{ device.vlans | map(attribute='id') | join(',') }}
+ no shutdown
+!
+{% endfor %}
+interface Vlan{{ device.mgmt_vlan }}
+ description Management
+ ip address {{ device.mgmt_ip }} {{ device.mgmt_mask }}
+ no shutdown
+!
+ip default-gateway {{ device.mgmt_gateway }}
+!
+line vty 0 15
+ login local
+ transport input ssh
+!
+end

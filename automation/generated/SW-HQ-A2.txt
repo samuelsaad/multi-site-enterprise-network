@@ -1,0 +1,56 @@
+! ==========================================================
+! SW-HQ-A2 (HQ access switch)
+! Generated from devices.yml — do not edit by hand.
+! Note: SSH also needs 'crypto key generate rsa' run once on the
+! device (choose 1024). That step is interactive and can't live
+! in a flat config file.
+! ==========================================================
+hostname SW-HQ-A2
+!
+ip domain-name lab.local
+service password-encryption
+enable secret Enable!Pass1
+username admin secret Admin!Pass1
+!
+spanning-tree mode rapid-pvst
+!
+vlan 10
+ name HQ-Staff
+!
+vlan 20
+ name HQ-Sales
+!
+vlan 99
+ name Management
+!
+interface FastEthernet0/1
+ description PC-B
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description Trunk to SW-HQ-Core
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,99
+ no shutdown
+!
+interface GigabitEthernet0/2
+ description Trunk to SW-HQ-A1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,99
+ no shutdown
+!
+interface Vlan99
+ description Management
+ ip address 10.1.99.12 255.255.255.0
+ no shutdown
+!
+ip default-gateway 10.1.99.1
+!
+line vty 0 15
+ login local
+ transport input ssh
+!
+end

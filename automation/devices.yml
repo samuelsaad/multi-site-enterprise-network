@@ -1,0 +1,57 @@
+# devices.yml — the data model for the access-layer switches.
+# Add a new switch by adding a block under "switches:" — you never touch
+# the template, so every device is built identically.
+
+common:
+  domain_name: lab.local
+  username: admin
+  user_secret: Admin!Pass1
+  enable_secret: Enable!Pass1
+  stp_mode: rapid-pvst
+
+switches:
+  - hostname: SW-HQ-A1
+    site: HQ
+    mgmt_vlan: 99
+    mgmt_ip: 10.1.99.11
+    mgmt_mask: 255.255.255.0
+    mgmt_gateway: 10.1.99.1
+    vlans:
+      - { id: 10, name: HQ-Staff }
+      - { id: 20, name: HQ-Sales }
+      - { id: 99, name: Management }
+    uplinks:
+      - { port: GigabitEthernet0/1, desc: Trunk to SW-HQ-Core }
+      - { port: GigabitEthernet0/2, desc: Trunk to SW-HQ-A2 }
+    access_ports:
+      - { port: FastEthernet0/1, vlan: 10, desc: PC-A }
+
+  - hostname: SW-HQ-A2
+    site: HQ
+    mgmt_vlan: 99
+    mgmt_ip: 10.1.99.12
+    mgmt_mask: 255.255.255.0
+    mgmt_gateway: 10.1.99.1
+    vlans:
+      - { id: 10, name: HQ-Staff }
+      - { id: 20, name: HQ-Sales }
+      - { id: 99, name: Management }
+    uplinks:
+      - { port: GigabitEthernet0/1, desc: Trunk to SW-HQ-Core }
+      - { port: GigabitEthernet0/2, desc: Trunk to SW-HQ-A1 }
+    access_ports:
+      - { port: FastEthernet0/1, vlan: 20, desc: PC-B }
+
+  - hostname: SW-BR-A1
+    site: Branch
+    mgmt_vlan: 99
+    mgmt_ip: 10.2.99.11
+    mgmt_mask: 255.255.255.0
+    mgmt_gateway: 10.2.99.1
+    vlans:
+      - { id: 40, name: BR-Staff }
+      - { id: 99, name: Management }
+    uplinks:
+      - { port: GigabitEthernet0/1, desc: Trunk to SW-BR-Core }
+    access_ports:
+      - { port: FastEthernet0/1, vlan: 40, desc: PC-C }
